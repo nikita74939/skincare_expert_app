@@ -1,14 +1,82 @@
 <?php include '_header.php';
 $edit=null; $jenis=get_all($pdo,'jenis_kulit','id_jenis ASC');
-if(isset($_GET['delete'])){$pdo->prepare("DELETE FROM rekomendasi WHERE id_rekomendasi=?")->execute([$_GET['delete']]);redirect('rekomendasi.php');}
-if($_SERVER['REQUEST_METHOD']==='POST'){
- $payload=[$_POST['id_jenis'],$_POST['kandungan_disarankan'],$_POST['produk_disarankan'],$_POST['kandungan_dihindari'],$_POST['tips_perawatan']];
- if($_POST['mode']==='edit')$pdo->prepare("UPDATE rekomendasi SET id_jenis=?, kandungan_disarankan=?, produk_disarankan=?, kandungan_dihindari=?, tips_perawatan=? WHERE id_rekomendasi=?")->execute([...$payload,$_POST['id_rekomendasi']]);
- else $pdo->prepare("INSERT INTO rekomendasi (id_jenis,kandungan_disarankan,produk_disarankan,kandungan_dihindari,tips_perawatan) VALUES (?,?,?,?,?)")->execute($payload);
- redirect('rekomendasi.php');
+if(isset($_GET['delete'])){
+  $pdo->prepare("DELETE FROM rekomendasi WHERE id_rekomendasi=?")->execute([$_GET['delete']]);
+  redirect('rekomendasi.php');
 }
-if(isset($_GET['edit'])){$stmt=$pdo->prepare("SELECT * FROM rekomendasi WHERE id_rekomendasi=?");$stmt->execute([$_GET['edit']]);$edit=$stmt->fetch();}
+if($_SERVER['REQUEST_METHOD']==='POST'){
+  $payload=[$_POST['id_jenis'],$_POST['kandungan_disarankan'],$_POST['produk_disarankan'],$_POST['kandungan_dihindari'],$_POST['tips_perawatan']];
+  if($_POST['mode']==='edit') {
+    $pdo->prepare("UPDATE rekomendasi SET id_jenis=?, kandungan_disarankan=?, produk_disarankan=?, kandungan_dihindari=?, tips_perawatan=? WHERE id_rekomendasi=?")->execute([...$payload,$_POST['id_rekomendasi']]);
+  } else {
+    $pdo->prepare("INSERT INTO rekomendasi (id_jenis,kandungan_disarankan,produk_disarankan,kandungan_dihindari,tips_perawatan) VALUES (?,?,?,?,?)")->execute($payload);
+  }
+  redirect('rekomendasi.php');
+}
+if(isset($_GET['edit'])){
+  $stmt=$pdo->prepare("SELECT * FROM rekomendasi WHERE id_rekomendasi=?");
+  $stmt->execute([$_GET['edit']]);
+  $edit=$stmt->fetch();
+}
 $data=$pdo->query("SELECT r.*,jk.nama_jenis FROM rekomendasi r JOIN jenis_kulit jk ON jk.id_jenis=r.id_jenis ORDER BY jk.id_jenis")->fetchAll();
 ?>
-<h2 class="fw-bold mb-3">Kelola Rekomendasi</h2><div class="row g-4"><div class="col-lg-5"><div class="feature-card p-4"><h5><?= $edit?'Edit':'Tambah' ?> Rekomendasi</h5><form method="POST"><input type="hidden" name="mode" value="<?= $edit?'edit':'add' ?>"><input type="hidden" name="id_rekomendasi" value="<?= e($edit['id_rekomendasi'] ?? '') ?>"><div class="mb-3"><label class="form-label">Jenis Kulit</label><select class="form-select" name="id_jenis" required><?php foreach($jenis as $j): ?><option value="<?= e($j['id_jenis']) ?>" <?= (($edit['id_jenis'] ?? '')===$j['id_jenis'])?'selected':'' ?>><?= e($j['id_jenis'].' - '.$j['nama_jenis']) ?></option><?php endforeach; ?></select></div><?php foreach(['kandungan_disarankan'=>'Kandungan Disarankan','produk_disarankan'=>'Produk Disarankan','kandungan_dihindari'=>'Kandungan Dihindari','tips_perawatan'=>'Tips Perawatan'] as $name=>$label): ?><div class="mb-3"><label class="form-label"><?= $label ?></label><textarea class="form-control" name="<?= $name ?>" rows="3"><?= e($edit[$name] ?? '') ?></textarea></div><?php endforeach; ?><button class="btn btn-rose">Simpan</button><?php if($edit): ?><a class="btn btn-light" href="rekomendasi.php">Batal</a><?php endif; ?></form></div></div><div class="col-lg-7"><div class="feature-card p-4"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Jenis</th><th>Produk</th><th>Aksi</th></tr></thead><tbody><?php foreach($data as $r): ?><tr><td><?= e($r['nama_jenis']) ?></td><td><?= e($r['produk_disarankan']) ?></td><td class="action-cell"><a class="btn btn-sm btn-outline-secondary" href="?edit=<?= e($r['id_rekomendasi']) ?>">Edit</a> <a class="btn btn-sm btn-outline-danger confirm-delete" href="?delete=<?= e($r['id_rekomendasi']) ?>">Hapus</a></td></tr><?php endforeach; ?></tbody></table></div></div></div></div>
+<h2 class="fw-bold mb-3">Kelola Rekomendasi</h2>
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="feature-card p-4">
+      <h5><?= $edit?'Edit':'Tambah' ?> Rekomendasi</h5>
+      <form method="POST">
+        <input type="hidden" name="mode" value="<?= $edit?'edit':'add' ?>">
+        <input type="hidden" name="id_rekomendasi" value="<?= e($edit['id_rekomendasi'] ?? '') ?>">
+        <div class="mb-3">
+          <label class="form-label">Jenis Kulit</label>
+          <select class="form-select" name="id_jenis" required>
+            <?php foreach($jenis as $j): ?>
+              <option value="<?= e($j['id_jenis']) ?>" <?= (($edit['id_jenis'] ?? '')===$j['id_jenis'])?'selected':'' ?>>
+                <?= e($j['id_jenis'].' - '.$j['nama_jenis']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <?php foreach(['kandungan_disarankan'=>'Kandungan Disarankan','produk_disarankan'=>'Produk Disarankan','kandungan_dihindari'=>'Kandungan Dihindari','tips_perawatan'=>'Tips Perawatan'] as $name=>$label): ?>
+          <div class="mb-3">
+            <label class="form-label"><?= $label ?></label>
+            <textarea class="form-control" name="<?= $name ?>" rows="3"><?= e($edit[$name] ?? '') ?></textarea>
+          </div>
+        <?php endforeach; ?>
+        <button class="btn btn-rose">Simpan</button>
+        <?php if($edit): ?>
+          <a class="btn btn-light" href="rekomendasi.php">Batal</a>
+        <?php endif; ?>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="feature-card p-4">
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Jenis</th>
+              <th>Produk</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach($data as $r): ?>
+              <tr>
+                <td><?= e($r['nama_jenis']) ?></td>
+                <td><?= e($r['produk_disarankan']) ?></td>
+                <td class="action-cell">
+                  <a class="btn btn-sm btn-outline-secondary" href="?edit=<?= e($r['id_rekomendasi']) ?>">Edit</a>
+                  <a class="btn btn-sm btn-outline-danger confirm-delete" href="?delete=<?= e($r['id_rekomendasi']) ?>">Hapus</a>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 <?php include '_footer.php'; ?>
