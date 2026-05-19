@@ -1,5 +1,6 @@
 <?php
 require 'config/database.php';
+require_once 'includes/functions.php';
 $id = $_GET['id'] ?? 0;
 $stmt = $pdo->prepare("SELECT k.*, jk.nama_jenis, jk.deskripsi FROM konsultasi k LEFT JOIN jenis_kulit jk ON jk.id_jenis = k.id_jenis_hasil WHERE k.id_konsultasi=?");
 $stmt->execute([$id]);

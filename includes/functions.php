@@ -11,11 +11,15 @@ function redirect($url) {
 }
 
 function is_admin() {
-    return isset($_SESSION['user']) && $_SESSION['user']['role'] === 'admin';
+    return isset($_SESSION['user'])
+        && is_array($_SESSION['user'])
+        && ($_SESSION['user']['role'] ?? '') === 'admin';
 }
 
-function require_admin() {
-    if (!is_admin()) redirect('login.php');
+function require_admin($login_url = 'login.php') {
+    if (!is_admin()) {
+        redirect($login_url);
+    }
 }
 
 function get_all($pdo, $table, $order = '') {
